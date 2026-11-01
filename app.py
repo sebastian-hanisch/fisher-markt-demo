@@ -195,6 +195,8 @@ if st.session_state.get("table_done"):
     for r in table:
         def cell(k):
             c = r[k]
+            if c["share"] is None:
+                return "Rauschgrenze"
             return "nie" if c["median"] is None else f"{c['median']}" + ("" if c["share"] == 1.0 else f" ({_de(100 * c['share'], 0)} %)")
         lines.append(f"| {r['n']}×{r['m']} | ≤ {_sci(r['target'])} | {cell('pr')} | {cell('tat')} | {cell('pg')} |")
     st.markdown("\n".join(lines))

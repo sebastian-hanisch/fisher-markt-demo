@@ -31,9 +31,9 @@ def test_standard_market_numbers():
     a = ev.analyse(ev.Settings())
     assert (a.market.n, a.market.m, a.market.budgets.sum() > 0) == (6, 5, True)
     assert R.c(float(a.eq.p.sum()), 3) == R.c(float(a.market.budgets.sum()), 3) == "6,461" and int(np.argmax(a.eq.p)) + 1 == 5
-    assert (R.sci(a.final("pr")), R.sci(a.final("tat")), R.sci(a.final("pg"))) == ("1,2e-15", "5,1e-03", "9,5e-10")
+    assert a.final("pr") < 1e-12 and a.final("pg") < 1e-7 and R.sci(a.final("tat")) == "5,1e-03"
     assert (a.reached("pr", 1e-6), a.reached("tat", 1e-6), a.reached("pg", 1e-6)) == (601, None, 97)
-    for part in ("**6,461**", "**1,2e-15**", "**5,1e-03**", "**9,5e-10**", "**601** Schritten", "**97** Funktionsauswertungen", "Slot 5"):
+    for part in ("**6,461**", "**unter 1e-12**", "**5,1e-03**", "**unter 1e-7**", "**601** Schritten", "**97** Funktionsauswertungen", "Slot 5"):
         assert part in README, part
 
 
@@ -41,9 +41,9 @@ def test_large_market_preset_numbers():
     preset = C.PRESETS["Großer Markt: das Endspiel"]
     a = ev.analyse(ev.Settings(**preset))
     assert (a.market.n, a.market.m, preset["steps"], preset["seed"]) == (30, 12, 10000, 17)
-    assert (R.sci(a.final("pr")), R.sci(a.final("pg")), R.sci(a.final("tat"))) == ("1,7e-15", "2,8e-08", "3,3e-04")
+    assert a.final("pr") < 1e-12 and 1e-9 < a.final("pg") < 1e-7 and R.sci(a.final("tat")) == "3,3e-04"
     assert len(a.errs["pg"]) == C.PG_MAX_ITER == 3000
-    for part in ("**1,7e-15**", "**2,8e-08**", "**3,3e-04**"):
+    for part in ("**unter 1e-12**", "**zwischen 1e-9 und 1e-7**", "**3,3e-04**"):
         assert part in README, part
 
 
@@ -82,28 +82,28 @@ def test_proportional_response_is_slow_in_one_of_the_eight_larger_markets():
     assert "6,0e-06 (Seed 200003)" in README and "100 000 Schritten" in README
 
 
-def test_the_gradient_reaches_1e_9_in_three_of_eight_larger_markets():
-    """Tabelle 3: 38 % (3 von 8) bei 20×10; der Rest stößt an die Genauigkeitsgrenze der Liniensuche (Fehler bleibt zwischen 1e-9 und 1e-6)."""
-    reached, floor = 0, []
+def test_the_gradient_is_reliable_down_to_1e_7_and_noisy_below():
+    """Alle acht 20×10-Märkte erreichen 10^-6 (Tabelle 3); 10^-9 erreicht nur ein Teil, und wie viele, hängt vom Rechner ab (README: Rauschgrenze)."""
+    reached_6, reached_9 = 0, 0
     for seed in C.TABLE_SEEDS:
         mk = make_market("stetig", 20, 10, C.DEFAULT_BUDGETS, seed)
         eq = A.solve(mk.v, mk.budgets)
         errs, _, _ = A.run_gradient(mk.v, mk.budgets, C.TABLE_PG_MAX, eq.p)
-        if errs.min() <= 1e-9:
-            reached += 1
-        else:
-            floor.append(float(errs.min()))
-    assert reached == 3 and max(floor) < 1e-6
-    assert "erreicht aber 10⁻⁹ bei 20×10 nur in 38 % der Märkte" in README
+        reached_6 += errs.min() <= 1e-6
+        reached_9 += errs.min() <= 1e-9
+    assert reached_6 == 8 and 1 <= reached_9 <= 7
+    assert C.PG_NOISE_FLOOR == 1e-7
+    for part in ("unterhalb von 10⁻⁷ an die Rauschgrenze", "3 von 8 auf Windows, 4 von 8 auf Linux bei 20×10"):
+        assert part in README, part
 
 
 def test_tie_numbers_of_the_readme():
     census = R.census_row()
     assert census == "| 0 von 30 | 28 von 30 | 0 von 30 |"
-    for part in ("keiner einen Kreis im Träger, bei ganzzahligen Nutzen **28 von 30**", "bei dünn besetzten keiner", "**5 unabhängige Kreise**", "**3,4e-15**", "**0,12**"):
+    for part in ("keiner einen Kreis im Träger, bei ganzzahligen Nutzen **28 von 30**", "bei dünn besetzten keiner", "**5 unabhängige Kreise**", "**weniger als 1e-12**", "**0,12**"):
         assert part in README, part
     t = R.tie_numbers()
-    assert t["rank"] == 5 and R.sci(t["price_diff"]) == "3,4e-15" and R.c(t["alloc_diff"]) == "0,12"
+    assert t["rank"] == 5 and t["price_diff"] < 1e-12 and R.c(t["alloc_diff"]) == "0,12"
 
 
 def test_lie_numbers_of_the_readme():

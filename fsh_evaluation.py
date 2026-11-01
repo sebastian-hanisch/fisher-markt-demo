@@ -201,7 +201,7 @@ def _first(errs: np.ndarray, work, target: float) -> int | None:
 
 def methods_table(sizes=C.TABLE_SIZES, seeds=C.TABLE_SEEDS, kind: str = "stetig") -> list[dict]:
     """Arbeit bis zum Preisfehler 10^-3 / 10^-6 / 10^-9 je Verfahren, Median über die Märkte (Anteil der Märkte, die das Ziel erreichen). Proportional Response und
-    Tâtonnement in Schritten, das Gradientenverfahren in Funktionsauswertungen."""
+    Tâtonnement in Schritten, das Gradientenverfahren in Funktionsauswertungen; beim Gradientenverfahren zählt nur, was über PG_NOISE_FLOOR liegt."""
     out = []
     for n, m in sizes:
         res = {k: {t: [] for t in C.TARGETS} for k in ("pr", "tat", "pg")}
@@ -218,6 +218,9 @@ def methods_table(sizes=C.TABLE_SIZES, seeds=C.TABLE_SEEDS, kind: str = "stetig"
         for t in C.TARGETS:
             row = {"n": n, "m": m, "target": t, "markets": len(seeds)}
             for k in ("pr", "tat", "pg"):
+                if k == "pg" and t < C.PG_NOISE_FLOOR:
+                    row[k] = {"median": None, "share": None}              # Rauschgrenze der Liniensuche: nicht berichtet
+                    continue
                 done = [v for v in res[k][t] if v is not None]
                 row[k] = {"median": int(np.median(done)) if done else None, "share": len(done) / len(seeds)}
             out.append(row)

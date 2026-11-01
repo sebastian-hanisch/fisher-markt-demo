@@ -22,6 +22,7 @@ POLISH_REL = 1e-5           # Polieren: eine Kante gehört zum Träger, wenn die
 TIE_TOL = 1e-9              # zwei Güter sind gleich gut je Preis, wenn sie sich relativ um weniger unterscheiden
 SOLVE_START, SOLVE_CAP = 100, 12800     # Gradientenverfahren der Referenzlösung: Schrittzahl wird verdoppelt, bis das Polieren gelingt
 TARGETS = (1e-3, 1e-6, 1e-9)            # Preisfehler, bis zu denen die Verfahren verglichen werden
+PG_NOISE_FLOOR = 1e-7                   # darunter entscheidet beim Gradientenverfahren das Rundungsrauschen der Liniensuche: Zahlen dort hängen vom Rechner ab und werden nicht berichtet
 
 # Vergleich über viele Märkte (Knopf): feste Seeds, nie ein einzelner Seed (DEMO-PLAYBOOK §4)
 TABLE_SEEDS = tuple(range(200000, 200008))      # 8 Märkte je Größe

@@ -32,9 +32,9 @@ Zufallsmärkte mit festen Seeds; Spediteure mit ungleichen Budgets; jede Zahl st
 | Frage | Befund |
 |---|---|
 | Standardmarkt (6 Spediteure, 5 Slots, Seed 17): Preissumme gegen Budgetsumme | beide **6,461**; der teuerste Slot ist Slot 5 |
-| Wie genau sind die drei Verfahren nach 2 000 Schritten (Standardmarkt)? | Proportional Response **1,2e-15**, Tâtonnement **5,1e-03**, Gradientenverfahren **9,5e-10** |
+| Wie genau sind die drei Verfahren nach 2 000 Schritten (Standardmarkt)? | Proportional Response **unter 1e-12**, Tâtonnement **5,1e-03**, Gradientenverfahren **unter 1e-7** |
 | Wie schnell erreichen sie 10⁻⁶ (Standardmarkt)? | Proportional Response nach **601** Schritten, Gradientenverfahren nach **97** Funktionsauswertungen, Tâtonnement nicht |
-| Großer Markt (30 Spediteure, 12 Slots, 10 000 Schritte) | Proportional Response **1,7e-15**, Gradientenverfahren **2,8e-08** (Genauigkeitsgrenze nach 3 000 Schritten), Tâtonnement **3,3e-04** |
+| Großer Markt (30 Spediteure, 12 Slots, 10 000 Schritte) | Proportional Response **unter 1e-12**, Gradientenverfahren **zwischen 1e-9 und 1e-7** (Genauigkeitsgrenze der Liniensuche), Tâtonnement **3,3e-04** |
 | Handbeispiel zur Falschangabe: ehrlicher Nutzen, Nutzen bei der Meldung (1 : 2), beste Meldung | **3,000**, **3,250**, **3,329** bei Verhältnis 2,93 (**+11,0 %**) |
 
 **Tabelle 1: Handbeispiele** (jeder Wert von Hand nachrechenbar). Spediteure in Zeilen.
@@ -57,32 +57,32 @@ Zufallsmärkte mit festen Seeds; Spediteure mit ungleichen Budgets; jede Zahl st
 | dünn besetzt (viele Nullen) | 6×5 | 20 | unter 1e-9 | 0 | 0 von 20 |
 | dünn besetzt (viele Nullen) | 20×10 | 20 | unter 1e-9 | 0 | 0 von 20 |
 
-**Tabelle 3: Drei Verfahren über acht Märkte** (stetige Nutzen, ungleiche Budgets, Seeds 200000 bis 200007). Median der Arbeit bis zum Preisfehler: Schritte bei Proportional Response und Tâtonnement, Funktionsauswertungen beim Gradientenverfahren. In Klammern der Anteil der Märkte, die das Ziel erreichen (fehlt die Klammer, alle). Grenzen: Proportional Response 100 000 Schritte, Tâtonnement 20 000, Gradientenverfahren 3 000; Faktor $c = 2$.
+**Tabelle 3: Drei Verfahren über acht Märkte** (stetige Nutzen, ungleiche Budgets, Seeds 200000 bis 200007). Median der Arbeit bis zum Preisfehler: Schritte bei Proportional Response und Tâtonnement, Funktionsauswertungen beim Gradientenverfahren. In Klammern der Anteil der Märkte, die das Ziel erreichen (fehlt die Klammer, alle). „Rauschgrenze“: nicht berichtet, siehe unten. Grenzen: Proportional Response 100 000 Schritte, Tâtonnement 20 000, Gradientenverfahren 3 000; Faktor $c = 2$.
 
 | Markt | Preisfehler | Proportional Response | Tâtonnement | Gradientenverfahren |
 |---|---|---|---|---|
 | 6×5 | ≤ 1,0e-03 | 127 | 2037 | 26 |
 | 6×5 | ≤ 1,0e-06 | 532 | nie | 41 |
-| 6×5 | ≤ 1,0e-09 | 818 | nie | 123 |
+| 6×5 | ≤ 1,0e-09 | 818 | nie | Rauschgrenze |
 | 20×10 | ≤ 1,0e-03 | 422 | 965 | 89 |
 | 20×10 | ≤ 1,0e-06 | 1620 (88 %) | nie | 180 |
-| 20×10 | ≤ 1,0e-09 | 3015 (88 %) | nie | 246 (38 %) |
+| 20×10 | ≤ 1,0e-09 | 3015 (88 %) | nie | Rauschgrenze |
 
-Das Gradientenverfahren braucht die wenigsten Auswertungen, erreicht aber 10⁻⁹ bei 20×10 nur in 38 % der Märkte: Seine Liniensuche vergleicht Zielwerte, die sich dort nur noch im Rundungsrauschen unterscheiden (das ist eine Eigenschaft dieser Umsetzung, nicht des Verfahrens). Proportional Response rechnet nur Quotienten und hat diese Grenze nicht; in einem der acht 20×10-Märkte bleibt sein Fehler aber auch nach 100 000 Schritten bei 6,0e-06 (Seed 200003), dort ist die Konvergenz langsam. Das Tâtonnement erreicht 10⁻³ und bleibt dort stehen.
+Das Gradientenverfahren braucht die wenigsten Auswertungen, stößt aber unterhalb von 10⁻⁷ an die Rauschgrenze seiner Liniensuche: Sie vergleicht Zielwerte, die sich dort nur noch im Rundungsrauschen unterscheiden. Dort hängt die Zahl der Märkte, die 10⁻⁹ erreichen, vom Rechner ab (3 von 8 auf Windows, 4 von 8 auf Linux bei 20×10); die Tabelle weist die Zelle deshalb als „Rauschgrenze“ aus. Das ist eine Eigenschaft dieser Umsetzung, nicht des Verfahrens. Proportional Response rechnet nur Quotienten und hat diese Grenze nicht; in einem der acht 20×10-Märkte bleibt sein Fehler aber auch nach 100 000 Schritten bei 6,0e-06 (Seed 200003), dort ist die Konvergenz langsam. Das Tâtonnement erreicht 10⁻³ und bleibt dort stehen.
 
-**Tabelle 4: Schrittweiten-Faktor des Tâtonnements.** Preisfehler nach 2 000 Schritten, Median über dieselben acht Märkte je Größe.
+**Tabelle 4: Schrittweiten-Faktor des Tâtonnements.** Preisfehler nach 2 000 Schritten, Median über dieselben acht Märkte je Größe; verlieren mindestens vier Märkte die Preise ganz (Fehler über 100 %), steht deren Zahl.
 
 | Faktor c | 6×5 | 20×10 |
 |---|---|---|
 | 0,25 | 1,9e-03 | 1,1e-02 |
 | 1,00 | 2,4e-03 | 1,1e-03 |
 | 2,00 | 3,6e-03 | 1,5e-03 |
-| 4,00 | 1,0e+00 | 2,6e-03 |
-| 8,00 | 3,3e+00 | 5,8e-03 |
+| 4,00 | über 100 % in 4 von 8 | 2,6e-03 |
+| 8,00 | über 100 % in 8 von 8 | 5,8e-03 |
 
 Kleine Schritte sind langsam, große bringen den Auktionator aus dem Takt: Bei 6×5 bleibt der Preisfehler nach 2 000 Schritten über 100 %, bei $c = 4$ in **4 von 8** Märkten, bei $c = 8$ in **8 von 8**, bei $c \le 2$ in keinem. Im Preset „Tâtonnement zu großer Schritt“ (6×5, Seed 17, $c = 8$, 1 500 Schritte) liegt er bei mehr als 1 und springt von Schritt 300 bis 3 000 zwischen 1,0 und 6,6.
 
-**Gleichstände.** Bei stetigen Nutzen hat in 30 Märkten (6×5) keiner einen Kreis im Träger, bei ganzzahligen Nutzen **28 von 30**, bei dünn besetzten keiner. Im Standardmarkt mit ganzzahligen Nutzen (Seed 17) hat der Träger **5 unabhängige Kreise**: Ein zweiter Lauf von Proportional Response aus zufälligem Start endet bei Preisen, die sich um **3,4e-15** von der Referenz unterscheiden, aber bei einer Zuteilung, die sich um bis zu **0,12** je Eintrag unterscheidet; beide tragen dasselbe Gleichgewicht.
+**Gleichstände.** Bei stetigen Nutzen hat in 30 Märkten (6×5) keiner einen Kreis im Träger, bei ganzzahligen Nutzen **28 von 30**, bei dünn besetzten keiner. Im Standardmarkt mit ganzzahligen Nutzen (Seed 17) hat der Träger **5 unabhängige Kreise**: Ein zweiter Lauf von Proportional Response aus zufälligem Start endet bei Preisen, die sich um **weniger als 1e-12** von der Referenz unterscheiden, aber bei einer Zuteilung, die sich um bis zu **0,12** je Eintrag unterscheidet; beide tragen dasselbe Gleichgewicht.
 
 **Falschangabe.** Handbeispiel: Spediteur 1 hat die Nutzen (3, 1), Spediteur 2 die Nutzen (1, 3), Budgets 1 und 1. Ehrlich sind die Preise (1, 1) und der Nutzen 3. Meldet Spediteur 1 das Verhältnis 1 : 2, sind die Preise (2/3, 4/3) und er erhält Slot 1 ganz und ein Viertel von Slot 2: wahrer Nutzen **3,25** (von Hand gerechnet und gegen SLSQP auf dem Eisenberg–Gale-Programm geprüft). Die beste Meldung auf einem Raster von 121 Verhältnissen ist 2,93 mit Nutzen 3,329 (**+11,0 %**). In 20 Zufallsmärkten (4 Spediteure, 3 Slots, 60 Meldungen je Markt) findet Spediteur 1 eine gewinnbringende Falschangabe in **8 von 20** Märkten:
 
@@ -97,7 +97,7 @@ Der Markt ist also **nicht wahrheitsgetreu**. Das ist eine Suche über eine fest
 - **Lineare Nutzen, teilbare Slots, eine Einheit je Slot:** Bei konkaven Nutzen (CES, Leontief) ändern sich Gleichgewicht und Verfahren; ganze Slots machen aus dem Markt ein Zuordnungsproblem.
 - **Preisnehmer:** Der Markt nimmt die gemeldeten Nutzen als gegeben. Die Demo zeigt die Einzelabweichung eines Käufers, rechnet aber kein Nash-Gleichgewicht des Marktspiels (Brânzei u. a.).
 - **Schritte und Auswertungen sind keine Rechenzeit:** Ein anderer Rechner, andere Schrittregeln oder Blockverfahren ändern die Reihenfolge; das Tâtonnement ist hier in einer einfachen gedämpften Form umgesetzt, kein Nachbau von Cole und Fleischer.
-- **Genauigkeitsgrenze des Gradientenverfahrens:** gilt für diese Armijo-Liniensuche auf dem Zielwert; ein Verfahren mit Schrittweite aus der Gradientenlänge hätte sie nicht.
+- **Genauigkeitsgrenze des Gradientenverfahrens:** gilt für diese Armijo-Liniensuche auf dem Zielwert; ein Verfahren mit Schrittweite aus der Gradientenlänge hätte sie nicht. Zahlen unterhalb von 10⁻⁷ sind plattformabhängig und werden nicht als Messung berichtet (die erste CI auf Linux hat das gezeigt).
 - **Zufallsmärkte mit acht Wiederholungen** in Tabelle 3 und 4; die Mediane schwanken mit den Seeds. Größere Märkte als 30 Spediteure mit 12 Slots sind nicht Teil der Demo.
 - **Literatur:** Alle Angaben beruhen auf Titel, Abstract und Sekundärquellen, nicht auf Volltexten; die Zuordnung „Proportional Response ist gespiegeltes Gradientenverfahren“ ist keiner einzelnen Arbeit zugeschrieben.
 

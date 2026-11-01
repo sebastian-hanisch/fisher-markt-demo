@@ -73,6 +73,8 @@ def method_rows() -> list[str]:
     for r in table_result():
         def cell(k):
             cc = r[k]
+            if cc["share"] is None:
+                return "Rauschgrenze"
             return "nie" if cc["median"] is None else f"{cc['median']}" + ("" if cc["share"] == 1.0 else f" ({c(100 * cc['share'], 0)} %)")
         rows.append(f"| {r['n']}×{r['m']} | ≤ {sci(r['target'])} | {cell('pr')} | {cell('tat')} | {cell('pg')} |")
     return rows
@@ -90,7 +92,8 @@ def eta_rows() -> list[str]:
                 eq = A.solve(mk.v, mk.budgets)
                 errs, _ = A.run_tatonnement(mk.v, mk.budgets, ETA_STEPS, eq.p, c_eta)
                 vals.append(errs[-1])
-            cells.append(sci(float(np.median(vals))))
+            lost = sum(v > 1.0 for v in vals)
+            cells.append(f"über 100 % in {lost} von {len(vals)}" if lost >= len(vals) // 2 else sci(float(np.median(vals))))
         rows.append(f"| {c(c_eta)} | " + " | ".join(cells) + " |")
     return rows
 
