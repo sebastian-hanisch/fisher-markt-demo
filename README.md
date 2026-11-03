@@ -1,7 +1,6 @@
 # Fisher-Markt: Preise aus Budgets – Streamlit-Demo
 
-<!-- TODO nach dem Deploy: direkt hierher den Live-Link setzen (Leerzeile davor und danach):
-**[→ Demo live ausprobieren](https://sebastianhanisch-fisher-markt-demo.streamlit.app/)** -->
+**[→ Demo live ausprobieren](https://sebastianhanisch-fisher-markt-demo.streamlit.app/)**
 
 Erstes Stück der Methodenreihe **Marktmechanismen** in der „Konzepte“-Reihe für die Website „Sebastian Hanisch – Operations Research und Machine Learning“. Ein Mechanismus macht aus Geboten, Budgets oder Überzeugungen Preise und eine Zuteilung; die Reihe prüft ihn an Effizienz, Anreizen, Budgetausgleich und Erlös und rechnet ihn als konvexes Programm. Vehikel: **ein Terminal teilt knappe Slots an Spediteure zu.** Die Spediteure haben Budgets und verschieden große Nutzen für jeden Slot; die Demo findet die Preise, bei denen jeder das Beste für sein Geld kauft und kein Slot übrig bleibt (das **Gleichgewicht des Fisher-Marktes**), und vergleicht drei Wege dorthin. Nachfolger sind die Positionsauktion (Stück 2) und das Pacing-Gleichgewicht (Stück 3), das beide zusammenführt.
 
@@ -162,4 +161,4 @@ Gebaut mit Streamlit, Plotly und NumPy.
 
 ---
 
-Diese Demo ist Teil des Portfolios von [Sebastian Hanisch](https://sebastianhanisch.net) – Operations Research und Machine Learning ([Über mich](https://sebastianhanisch.net/ueber-mich.html)). Mehr zu den Demos: [Interaktive Demos](https://sebastianhanisch.net/demos.html).
+Diese Demo ist Teil des Portfolios von [Sebastian Hanisch](https://sebastianhanisch.net) – Operations Research und Machine Learning ([Über mich](https://sebastianhanisch.net/ueber-mich.html)). Mehr zur Reihe: [Marktmechanismen: von Preisen bis Marktmachern](https://sebastianhanisch.net/konzepte-marktmechanismen.html).
