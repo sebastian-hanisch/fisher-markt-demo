@@ -19,7 +19,7 @@ from fsh_evaluation import (
     lie_curve,
     manipulation_search,
     methods_table,
-    tie_census,
+    tie_census_detail,
     tie_pair,
     verdict_equilibrium,
     verdict_lie,
@@ -69,7 +69,7 @@ def _tie(kind, n, m, budgets, seed):
 
 @st.cache_data(show_spinner=False)
 def _census():
-    return {kind: tie_census(kind) for kind in C.KINDS}
+    return {kind: tie_census_detail(kind) for kind in C.KINDS}
 
 
 @st.cache_data(show_spinner=False)
@@ -153,7 +153,7 @@ m1, m2, m3, m4 = st.columns(4)
 m1.metric("Preissumme", _de(float(eq.p.sum()), 3), delta=f"= Budgetsumme {_de(float(mk.budgets.sum()), 3)}", delta_color="off")
 m2.metric("Teuerster Slot", f"Slot {int(np.argmax(eq.p)) + 1}", delta=f"Preis {_de(float(eq.p.max()), 3)}", delta_color="off")
 m3.metric("Größte Abweichung", _sci(a.worst_gap), delta="Räumung, Budget, Bang-per-Buck, Neid", delta_color="off")
-m4.metric("Kreise im Träger", f"{a.rank}", delta="Zuteilung eindeutig" if a.rank == 0 else "meist mehrere Zuteilungen", delta_color="off")
+m4.metric("Kreise im Träger", f"{a.rank}", delta="Zuteilung eindeutig" if a.unique else "mehrere Zuteilungen", delta_color="off")
 st.plotly_chart(build_spend(eq.spend, eq.p), width="stretch", key="main_chart")
 st.caption("Ausgaben je Spediteur und Slot (Preis mal Anteil); über jeder Spalte steht der Preis des Slots. Jede Zeile summiert sich zum Budget des Spediteurs, jede Spalte zum Preis.")
 if not eq.exact:
@@ -209,21 +209,21 @@ st.markdown("---")
 # --- Experiment 2: Gleichstände -----------------------------------------------------------------------------------------------------------------
 
 st.subheader("🔬 Experiment 2: Gleichstände – Preise eindeutig, Zuteilung nicht")
-st.markdown("Hat ein Spediteur bei zwei Slots denselben besten Nutzen je Preiseinheit, darf er sein Geld beliebig auf beide verteilen. Zeichnet man die besten Kanten als Graph, bedeutet **ein Kreis** darin meist einen Freiheitsgrad der Zuteilung (in Entartungsfällen kann er festgelegt sein); "
-            "ohne Kreis (ein Wald) ist die Zuteilung eindeutig. Die **Preise** sind trotzdem immer eindeutig.")
+st.markdown("Hat ein Spediteur bei zwei Slots denselben besten Nutzen je Preiseinheit, darf er sein Geld beliebig auf beide verteilen. Zeichnet man die besten Kanten als Graph, bedeutet **ein Kreis** darin meist einen Freiheitsgrad der Zuteilung; ob es zu den Preisen wirklich mehrere Zuteilungen gibt, prüft die App eigens (in Randfällen ist sie trotz Kreis eindeutig). "
+            "Ohne Kreis (ein Wald) ist die Zuteilung eindeutig. Die **Preise** sind in beiden Fällen eindeutig.")
 if a.rank == 0:
-    kind_t, text_t = verdict_ties(0, None, None)
+    kind_t, text_t = verdict_ties(0, True, None, None)
     getattr(st, kind_t)(text_t)
     st.caption("Der Markt oben hat keinen Gleichstand. Wählen Sie links „ganzzahlige Nutzen“ oder den Schnellstart „Gleichstände“, um zwei Zuteilungen zu sehen.")
 else:
     x2, price_diff, alloc_diff = _tie(settings.kind, settings.n, settings.m, settings.budgets, settings.seed)
     st.plotly_chart(build_tie_allocations(eq.x, x2), width="stretch", key="tie_chart")
-    kind_t, text_t = verdict_ties(a.rank, price_diff, alloc_diff)
+    kind_t, text_t = verdict_ties(a.rank, a.unique, price_diff, alloc_diff)
     getattr(st, kind_t)(text_t)
     st.caption("Links die Zuteilung der Referenz, rechts die, bei der Proportional Response aus einem zufälligen Start landet (20 000 Schritte). Beide verkaufen jeden Slot ganz und lassen jedes Budget ausgeben.")
 census = _census()
-st.markdown(f"**Zählung** ({C.TIE_CENSUS_MARKETS} Märkte mit {C.TIE_CENSUS_SIZE[0]} Spediteuren und {C.TIE_CENSUS_SIZE[1]} Slots je Erzeugerart): Märkte mit mindestens einem Kreis im Träger – "
-            + ", ".join(f"{C.KIND_LABEL[k]}: **{census[k]}**" for k in C.KINDS) + ".")
+st.markdown(f"**Zählung** ({C.TIE_CENSUS_MARKETS} Märkte mit {C.TIE_CENSUS_SIZE[0]} Spediteuren und {C.TIE_CENSUS_SIZE[1]} Slots je Erzeugerart): Märkte mit mindestens einem Kreis im Träger (in Klammern: davon mit mehreren Zuteilungen) – "
+            + ", ".join(f"{C.KIND_LABEL[k]}: **{census[k][0]}** ({census[k][1]})" for k in C.KINDS) + ".")
 
 st.markdown("---")
 

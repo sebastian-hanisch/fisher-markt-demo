@@ -72,6 +72,21 @@ def cycle_rank(tight: np.ndarray) -> int:
     return int(tight.sum()) - (n + m - comps)
 
 
+def unique_allocation(tight: np.ndarray, spend: np.ndarray, budgets: np.ndarray) -> bool:
+    """Gibt es zu den Preisen nur eine Zuteilung? `tight` = enge Kanten, `spend` = eine zulässige Zuteilung auf ihnen. Eine Kante kann genau dann in irgendeiner zulässigen
+    Zuteilung positiv sein, wenn Hin- und Rückweg im Restgraphen (Käufer -> Gut auf allen engen Kanten, Gut -> Käufer auf Kanten mit Ausgabe) liegen, also beide Enden im selben
+    starken Zusammenhang. Die Zuteilung ist eindeutig genau dann, wenn diese Kanten kreisfrei sind (ein Kreis lässt sich abwechselnd rauf- und runterschieben).
+    Das ist die Bestimmung per LP (Minimum = Maximum jeder Ausgabe), nur ohne Löser."""
+    n, m = tight.shape
+    reach = np.eye(n + m, dtype=bool)
+    reach[:n, n:] |= tight
+    reach[n:, :n] |= (spend > 1e-9 * budgets.max()).T
+    for k in range(n + m):                                     # transitiver Abschluss (Warshall)
+        reach |= np.outer(reach[:, k], reach[k, :])
+    movable = tight & reach[:n, n:] & reach[n:, :n].T
+    return cycle_rank(movable) == 0
+
+
 # --- Drei Verfahren -------------------------------------------------------------------------------------------------------------------------
 
 def pr_step(v: np.ndarray, budgets: np.ndarray, b: np.ndarray) -> np.ndarray:

@@ -66,6 +66,37 @@ def test_a_long_proportional_response_run_ends_at_the_reference_prices():
         assert b.sum(axis=0) == pytest.approx(eq.p, rel=1e-8)
 
 
+def allocation_is_unique_by_lp(v, budgets, p, tol=1e-7):
+    """Orakel für die Eindeutigkeit der Zuteilung: Für jede enge Kante Minimum und Maximum der Ausgabe im Gleichgewichtspolytop (Preise fest, Summen der Budgets und Preise) per LP."""
+    tight = A.tight_edges(v, p)
+    n, m = v.shape
+    edges = list(zip(*np.nonzero(tight)))
+    rows = [[1.0 if i == a else 0.0 for a, _ in edges] for i in range(n)] + [[1.0 if j == b else 0.0 for _, b in edges] for j in range(m)]
+    rhs = list(budgets) + list(p)
+    for k in range(len(edges)):
+        c = np.zeros(len(edges))
+        c[k] = 1.0
+        lo = so.linprog(c, A_eq=rows, b_eq=rhs, bounds=(0, None), method="highs")
+        hi = so.linprog(-c, A_eq=rows, b_eq=rhs, bounds=(0, None), method="highs")
+        assert lo.status == 0 and hi.status == 0
+        if -hi.fun - lo.fun > tol:
+            return False
+    return True
+
+
+def test_unique_allocation_agrees_with_a_linear_program_in_tie_markets():
+    rng = np.random.default_rng(31)
+    seen = set()
+    for _ in range(40):
+        mk = S.market_from_rng("ganzzahlig", C.DEFAULT_BUDGETS, 6, 5, rng)
+        eq = A.solve(mk.v, mk.budgets)
+        tight = A.tight_edges(mk.v, eq.p)
+        mine = A.unique_allocation(tight, eq.spend, mk.budgets)
+        assert mine == allocation_is_unique_by_lp(mk.v, mk.budgets, eq.p)
+        seen.add((A.cycle_rank(tight) > 0, mine))
+    assert seen == {(False, True), (True, True), (True, False)}                  # Wald, Kreis mit einer Zuteilung, Kreis mit mehreren
+
+
 def test_the_tie_market_has_the_same_prices_but_another_allocation_in_a_second_run():
     mk = S.make_market("ganzzahlig", 6, 5, "ungleich", C.DEFAULT_SEED)
     eq = A.solve(mk.v, mk.budgets)

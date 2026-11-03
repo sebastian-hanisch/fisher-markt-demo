@@ -100,10 +100,11 @@ def test_the_gradient_is_reliable_down_to_1e_7_and_noisy_below():
 def test_tie_numbers_of_the_readme():
     census = R.census_row()
     assert census == "| 0 von 30 | 28 von 30 | 0 von 30 |"
-    for part in ("keiner einen Kreis im Träger, bei ganzzahligen Nutzen **28 von 30**", "bei dünn besetzten keiner", "**5 unabhängige Kreise**", "**weniger als 1e-12**", "**0,12**"):
+    assert R.census_multiple_row() == "| 0 von 30 | 25 von 30 | 0 von 30 |"                # 3 der 28 Märkte mit Kreis haben trotzdem nur eine Zuteilung
+    for part in ("keiner einen Kreis im Träger, bei ganzzahligen Nutzen **28 von 30**", "bei dünn besetzten keiner", "In **3** dieser 28 Märkte", "in **25** gibt es mehrere", "**5 unabhängige Kreise**", "**weniger als 1e-12**", "**0,12**"):
         assert part in README, part
     t = R.tie_numbers()
-    assert t["rank"] == 5 and t["price_diff"] < 1e-12 and R.c(t["alloc_diff"]) == "0,12"
+    assert t["rank"] == 5 and not t["unique"] and t["price_diff"] < 1e-12 and R.c(t["alloc_diff"]) == "0,12"
 
 
 def test_lie_numbers_of_the_readme():

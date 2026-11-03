@@ -173,3 +173,44 @@ def test_nash_beaten_counts_better_allocations(diagonal):
     eq = A.solve(v, budgets)
     assert A.nash_beaten(v, budgets, eq.x, np.random.default_rng(1)) == 0
     assert A.nash_beaten(v, budgets, eq.x[::-1], np.random.default_rng(1), trials=50) > 0
+
+
+def _unique(v, budgets):
+    eq = A.solve(v, budgets)
+    tight = A.tight_edges(v, eq.p)
+    return A.cycle_rank(tight), A.unique_allocation(tight, eq.spend, budgets), eq
+
+
+def test_a_cycle_can_still_leave_only_one_allocation():
+    """Randfall aus der unabhängigen Prüfung: Der Träger hat einen Kreis (Käufer 1 und 2, Slots 1 und 2), aber die Summen legen jede Ausgabe fest."""
+    v = np.array([[1.0, 1.0, 0.0], [1.0, 1.0, 1.0], [1.0, 0.0, 0.0]])
+    budgets = np.array([1.5, 1.0, 0.5])
+    rank, unique, eq = _unique(v, budgets)
+    assert eq.p == pytest.approx([1.0, 1.0, 1.0], abs=1e-12)
+    assert rank == 1 and unique
+    assert eq.x == pytest.approx(np.array([[0.5, 1.0, 0.0], [0.0, 0.0, 1.0], [0.5, 0.0, 0.0]]), abs=1e-9)
+
+
+def test_a_cycle_with_free_spending_means_several_allocations(equal_values):
+    v, budgets = equal_values                                                        # 2x2 mit allen Kanten eng: ein Kreis, der sich verschieben lässt
+    rank, unique, _ = _unique(v, budgets)
+    assert rank == 1 and not unique
+    v = np.array([[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]])
+    rank, unique, _ = _unique(v, np.array([1.0, 2.0, 3.0]))
+    assert rank == 4 and not unique
+
+
+def test_a_forest_has_a_unique_allocation(diagonal, three_slots):
+    for v, budgets in (diagonal, three_slots):
+        rank, unique, _ = _unique(v, budgets)
+        assert rank == 0 and unique
+
+
+def test_unique_allocation_does_not_depend_on_which_feasible_allocation_is_given():
+    """Ausgangspunkt eine Ecke (Ausgaben nur auf einem Teil der engen Kanten) oder eine Mitte: dasselbe Urteil, weil es um alle zulässigen Zuteilungen geht."""
+    tight, budgets = np.ones((2, 2), dtype=bool), np.array([1.0, 1.0])
+    assert not A.unique_allocation(tight, np.eye(2), budgets)
+    assert not A.unique_allocation(tight, np.full((2, 2), 0.5), budgets)
+    v = np.array([[1.0, 1.0, 0.0], [1.0, 1.0, 1.0], [1.0, 0.0, 0.0]])
+    t3, b3 = A.tight_edges(v, np.ones(3)), np.array([1.5, 1.0, 0.5])
+    assert A.unique_allocation(t3, np.array([[0.5, 1.0, 0.0], [0.0, 0.0, 1.0], [0.5, 0.0, 0.0]]), b3)

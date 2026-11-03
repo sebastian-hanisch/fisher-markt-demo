@@ -31,12 +31,15 @@ def test_methods_verdict_names_the_most_accurate_method_and_the_work():
 
 
 def test_ties_verdict_branches():
-    kind, text = ev.verdict_ties(0, None, None)
+    kind, text = ev.verdict_ties(0, True, None, None)
     assert kind == "info" and "Kein Gleichstand" in text and "Wald" in text
-    kind, text = ev.verdict_ties(1, 3.4e-15, 0.124)
-    assert kind == "warning" and "einen Kreis" in text and "3,4e-15" in text and "0,12" in text
-    kind, text = ev.verdict_ties(5, 1e-12, 0.5)
+    kind, text = ev.verdict_ties(1, False, 3.4e-15, 0.124)
+    assert kind == "warning" and "einen Kreis" in text and "mehrere Zuteilungen" in text and "Preise sind trotzdem eindeutig" in text and "3,4e-15" in text and "0,12" in text
+    assert "unendlich" not in text
+    kind, text = ev.verdict_ties(5, False, 1e-12, 0.5)
     assert kind == "warning" and "5 unabhängige Kreise" in text and "1,0e-12" in text and "0,50" in text
+    kind, text = ev.verdict_ties(1, True, 1e-15, 0.0)                                          # Kreis, aber jede Ausgabe festgelegt
+    assert kind == "info" and "einen Kreis" in text and "trotzdem eindeutig" in text and "mehrere Zuteilungen" not in text
 
 
 def test_lie_verdict_both_branches():

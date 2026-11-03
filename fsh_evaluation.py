@@ -28,8 +28,9 @@ class Analysis:
     eq: A.Equilibrium
     gaps: dict
     nash_beaten: int
-    rank: int                  # unabhängige Kreise des Trägers (0 = Zuteilung eindeutig)
-    errs: dict                 # Verfahren -> Preisfehler je Schritt
+    rank: int                  # unabhängige Kreise des Trägers (0 = Wald = Zuteilung eindeutig)
+    unique: bool               # Zuteilung zu diesen Preisen eindeutig (auch bei einem Kreis möglich, wenn er festgelegt ist)
+    errs: dict                # Verfahren -> Preisfehler je Schritt
     work: dict                 # Verfahren -> Arbeit (Schritte bzw. Funktionsauswertungen) je Schritt
 
     @property
@@ -55,13 +56,15 @@ def analyse(settings: Settings) -> Analysis:
     x = eq.x
     g = A.gaps(mk.v, mk.budgets, eq.p, x)
     beaten = A.nash_beaten(mk.v, mk.budgets, x, np.random.default_rng(settings.seed + 3))
-    rank = A.cycle_rank(A.tight_edges(mk.v, eq.p))
+    tight = A.tight_edges(mk.v, eq.p)
+    rank = A.cycle_rank(tight)
+    unique = A.unique_allocation(tight, eq.spend, mk.budgets)
     steps = settings.steps
     e_pr, _ = A.run_pr(mk.v, mk.budgets, steps, eq.p)
     e_tat, _ = A.run_tatonnement(mk.v, mk.budgets, steps, eq.p, settings.eta)
     e_pg, ev_pg, _ = A.run_gradient(mk.v, mk.budgets, min(steps, C.PG_MAX_ITER), eq.p)
     ar = np.arange(1, steps + 1, dtype=float)
-    return Analysis(mk, eq, g, beaten, rank, {"pr": e_pr, "tat": e_tat, "pg": e_pg}, {"pr": ar, "tat": ar, "pg": ev_pg})
+    return Analysis(mk, eq, g, beaten, rank, unique, {"pr": e_pr, "tat": e_tat, "pg": e_pg}, {"pr": ar, "tat": ar, "pg": ev_pg})
 
 
 # --- Verdikte als reine Funktionen -------------------------------------------------------------------------------------------------------
@@ -102,12 +105,16 @@ def verdict_methods(steps: int, final: dict, reached: dict) -> tuple[str, str]:
     return kind, head + " " + "; ".join(tail) + f". Am genauesten ist hier: **{C.METHOD_LABEL[best]}**."
 
 
-def verdict_ties(rank: int, price_diff: float | None, alloc_diff: float | None) -> tuple[str, str]:
-    """Gleichstände: Kreise im Träger = mehrere Zuteilungen; zwei Läufe aus verschiedenen Startpunkten haben dieselben Preise und andere Zuteilungen."""
+def verdict_ties(rank: int, unique: bool, price_diff: float | None, alloc_diff: float | None) -> tuple[str, str]:
+    """Gleichstände: Ein Kreis im Träger lässt meist mehrere Zuteilungen zu; ob es zu den Preisen wirklich nur eine gibt, entscheidet `unique` (jede Ausgabe nimmt nur einen Wert an).
+    Zwei Läufe aus verschiedenen Startpunkten haben dieselben Preise und, bei mehreren Zuteilungen, andere Zuteilungen."""
     if rank == 0:
         return "info", "Kein Gleichstand im Träger (der Käufer-Gut-Graph der besten Güter ist ein Wald): Die Zuteilung ist eindeutig, es gibt nur ein Gleichgewicht."
     word = "einen Kreis" if rank == 1 else f"{rank} unabhängige Kreise"
-    return "warning", (f"Der Träger enthält {word}: Meist gibt es dann unendlich viele Zuteilungen, die dieselben Preise tragen. Zwei Läufe aus verschiedenen Startpunkten enden bei Preisen, "
+    if unique:
+        return "info", (f"Der Träger enthält {word}, aber die Zuteilung ist trotzdem eindeutig: Die Summen der Budgets und Preise legen jede Ausgabe fest (Randfall). "
+                        f"Es gibt nur ein Gleichgewicht, die Preise sind ohnehin eindeutig.")
+    return "warning", (f"Der Träger enthält {word}, und es gibt mehrere Zuteilungen, die dieselben Preise tragen (die Preise sind trotzdem eindeutig). Zwei Läufe aus verschiedenen Startpunkten enden bei Preisen, "
                        f"die sich um {_sci(price_diff)} unterscheiden, aber bei Zuteilungen, die sich um bis zu {_num(alloc_diff)} je Eintrag unterscheiden.")
 
 
@@ -150,14 +157,27 @@ def tie_pair(market: Market, eq: A.Equilibrium, seed: int, steps: int = TIE_STEP
 
 
 def tie_census(kind: str, mode: str = C.DEFAULT_BUDGETS, markets: int = C.TIE_CENSUS_MARKETS, size=C.TIE_CENSUS_SIZE) -> int:
-    """Zahl der Märkte (von `markets`), deren Träger einen Kreis enthält (Zuteilung nicht eindeutig)."""
+    """Zahl der Märkte (von `markets`), deren Träger einen Kreis enthält (meist mehrere Zuteilungen; `tie_census_multiple` zählt die mit wirklich mehreren)."""
+    return tie_census_detail(kind, mode, markets, size)[0]
+
+
+def tie_census_multiple(kind: str, mode: str = C.DEFAULT_BUDGETS, markets: int = C.TIE_CENSUS_MARKETS, size=C.TIE_CENSUS_SIZE) -> int:
+    """Zahl der Märkte (von `markets`) mit mehreren Zuteilungen zu den Gleichgewichtspreisen."""
+    return tie_census_detail(kind, mode, markets, size)[1]
+
+
+def tie_census_detail(kind: str, mode: str = C.DEFAULT_BUDGETS, markets: int = C.TIE_CENSUS_MARKETS, size=C.TIE_CENSUS_SIZE) -> tuple[int, int]:
+    """(Märkte mit Kreis im Träger, davon mit mehreren Zuteilungen) über `markets` Märkte."""
     rng = np.random.default_rng(31)
-    count = 0
+    cycles = multiple = 0
     for _ in range(markets):
         mk = market_from_rng(kind, mode, size[0], size[1], rng)
         eq = A.solve(mk.v, mk.budgets)
-        count += A.cycle_rank(A.tight_edges(mk.v, eq.p)) > 0
-    return count
+        tight = A.tight_edges(mk.v, eq.p)
+        has_cycle = A.cycle_rank(tight) > 0
+        cycles += has_cycle
+        multiple += has_cycle and not A.unique_allocation(tight, eq.spend, mk.budgets)
+    return int(cycles), int(multiple)
 
 
 def lie_curve(ratios=C.MANIP_RATIOS) -> tuple[list[float], float, float]:

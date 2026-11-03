@@ -103,12 +103,18 @@ def census_row() -> str:
     return "| " + " | ".join(f"{census[k]} von {C.TIE_CENSUS_MARKETS}" for k in C.KINDS) + " |"
 
 
+def census_multiple_row() -> str:
+    """Märkte mit mehreren Zuteilungen zu den Gleichgewichtspreisen (Teilmenge der Märkte mit Kreis)."""
+    census = {k: ev.tie_census_multiple(k) for k in C.KINDS}
+    return "| " + " | ".join(f"{census[k]} von {C.TIE_CENSUS_MARKETS}" for k in C.KINDS) + " |"
+
+
 def tie_numbers() -> dict:
     """Standardmarkt mit ganzzahligen Nutzen: Kreise im Träger, Preisabweichung und größter Unterschied der Zuteilungen zwischen Referenz und zweitem PR-Lauf."""
     s = ev.Settings(kind="ganzzahlig")
     a = ev.analyse(s)
     _, price_diff, alloc_diff = ev.tie_pair(a.market, a.eq, s.seed)
-    return {"rank": a.rank, "price_diff": price_diff, "alloc_diff": alloc_diff}
+    return {"rank": a.rank, "unique": a.unique, "price_diff": price_diff, "alloc_diff": alloc_diff}
 
 
 def lie_numbers() -> dict:
@@ -128,6 +134,7 @@ if __name__ == "__main__":
         print(f"\n{name}")
         print("\n".join(rows))
     print("\nZählung Gleichstände\n" + census_row())
+    print("Davon mit mehreren Zuteilungen\n" + census_multiple_row())
     print("\nGleichstandsmarkt", tie_numbers())
     print("\nFalschangabe", lie_numbers())
     print("\nSuche\n" + search_row())
