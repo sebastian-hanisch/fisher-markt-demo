@@ -153,7 +153,7 @@ m1, m2, m3, m4 = st.columns(4)
 m1.metric("Preissumme", _de(float(eq.p.sum()), 3), delta=f"= Budgetsumme {_de(float(mk.budgets.sum()), 3)}", delta_color="off")
 m2.metric("Teuerster Slot", f"Slot {int(np.argmax(eq.p)) + 1}", delta=f"Preis {_de(float(eq.p.max()), 3)}", delta_color="off")
 m3.metric("Größte Abweichung", _sci(a.worst_gap), delta="Räumung, Budget, Bang-per-Buck, Neid", delta_color="off")
-m4.metric("Kreise im Träger", f"{a.rank}", delta="Zuteilung eindeutig" if a.rank == 0 else "mehrere Zuteilungen", delta_color="off")
+m4.metric("Kreise im Träger", f"{a.rank}", delta="Zuteilung eindeutig" if a.rank == 0 else "meist mehrere Zuteilungen", delta_color="off")
 st.plotly_chart(build_spend(eq.spend, eq.p), width="stretch", key="main_chart")
 st.caption("Ausgaben je Spediteur und Slot (Preis mal Anteil); über jeder Spalte steht der Preis des Slots. Jede Zeile summiert sich zum Budget des Spediteurs, jede Spalte zum Preis.")
 if not eq.exact:
@@ -185,8 +185,8 @@ final = {k: a.final(k) for k in ("pr", "tat", "pg")}
 reached = {k: a.reached(k, 1e-6) for k in ("pr", "tat", "pg")}
 kind_m, text_m = verdict_methods(settings.steps, final, reached)
 getattr(st, kind_m)(text_m)
-st.caption("Das Gradientenverfahren stößt bei etwa 10⁻⁸ an die Genauigkeitsgrenze seiner Liniensuche (sie vergleicht Zielwerte, die sich dort nur noch im Rundungsrauschen unterscheiden); "
-           "das ist eine Eigenschaft dieser Umsetzung. Das Tâtonnement bleibt bei abklingender Schrittweite weit über 10⁻⁶ stehen; mit großem Faktor c kommt es nicht zur Ruhe.")
+st.caption("Das Gradientenverfahren stößt je nach Markt und Rechner irgendwo zwischen etwa 10⁻⁸ und 10⁻¹⁵ an die Genauigkeitsgrenze seiner Liniensuche (sie vergleicht Zielwerte, die sich dort nur noch im Rundungsrauschen unterscheiden); "
+           "das ist eine Eigenschaft dieser Umsetzung. Das Tâtonnement schwankt bei abklingender Schrittweite weit über 10⁻⁶; mit großem Faktor c kommt es in dieser Umsetzung nicht zur Ruhe.")
 if st.button("📊 Vergleich über viele Märkte rechnen", key="table_button", help="Acht Zufallsmärkte je Größe, Arbeit bis 10⁻³, 10⁻⁶ und 10⁻⁹; dauert etwa eine halbe Minute."):
     st.session_state["table_done"] = True
 if st.session_state.get("table_done"):
@@ -209,7 +209,7 @@ st.markdown("---")
 # --- Experiment 2: Gleichstände -----------------------------------------------------------------------------------------------------------------
 
 st.subheader("🔬 Experiment 2: Gleichstände – Preise eindeutig, Zuteilung nicht")
-st.markdown("Hat ein Spediteur bei zwei Slots denselben besten Nutzen je Preiseinheit, darf er sein Geld beliebig auf beide verteilen. Zeichnet man die besten Kanten als Graph, bedeutet **jeder Kreis** darin einen Freiheitsgrad der Zuteilung; "
+st.markdown("Hat ein Spediteur bei zwei Slots denselben besten Nutzen je Preiseinheit, darf er sein Geld beliebig auf beide verteilen. Zeichnet man die besten Kanten als Graph, bedeutet **ein Kreis** darin meist einen Freiheitsgrad der Zuteilung (in Entartungsfällen kann er festgelegt sein); "
             "ohne Kreis (ein Wald) ist die Zuteilung eindeutig. Die **Preise** sind trotzdem immer eindeutig.")
 if a.rank == 0:
     kind_t, text_t = verdict_ties(0, None, None)
@@ -273,7 +273,7 @@ with st.expander("📐 Mathematische Formulierung"):
     st.markdown(
         r"""
 **Gleichgewicht.** Käufer $i=1..n$ mit Budget $B_i$, Güter $j=1..m$ zu je einer Einheit, Nutzen $u_i(x_i) = \sum_j v_{ij}x_{ij}$. Preise $p \in \mathbb{R}^m_{>0}$ und Zuteilung $x$ bilden ein **Gleichgewicht**, wenn
-$\sum_i x_{ij} = 1$ für alle $j$, $\sum_j p_j x_{ij} = B_i$ für alle $i$ und $x_{ij} > 0 \Rightarrow v_{ij}/p_j = \max_k v_{ik}/p_k$ (Bang-per-Buck). Es existiert; die Preise sind eindeutig, die Zuteilung genau dann, wenn der Graph der besten Kanten kreisfrei ist.
+$\sum_i x_{ij} = 1$ für alle $j$, $\sum_j p_j x_{ij} = B_i$ für alle $i$ und $x_{ij} > 0 \Rightarrow v_{ij}/p_j = \max_k v_{ik}/p_k$ (Bang-per-Buck). Es existiert; die Preise sind eindeutig; die Zuteilung ist eindeutig, wenn der Graph der besten Kanten kreisfrei ist (bei einem Kreis meist nicht, in Entartungsfällen doch).
 
 **Eisenberg–Gale.** $\max \sum_i B_i \log u_i(x_i)$ unter $\sum_i x_{ij} \le 1$, $x \ge 0$. Die Optimalitätsbedingungen sind die Gleichgewichtsbedingungen, die Preise die Dualvariablen der Güterrestriktionen.
 

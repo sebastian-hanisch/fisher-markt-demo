@@ -107,7 +107,7 @@ def verdict_ties(rank: int, price_diff: float | None, alloc_diff: float | None) 
     if rank == 0:
         return "info", "Kein Gleichstand im Träger (der Käufer-Gut-Graph der besten Güter ist ein Wald): Die Zuteilung ist eindeutig, es gibt nur ein Gleichgewicht."
     word = "einen Kreis" if rank == 1 else f"{rank} unabhängige Kreise"
-    return "warning", (f"Der Träger enthält {word}: Es gibt unendlich viele Zuteilungen, die dieselben Preise tragen. Zwei Läufe aus verschiedenen Startpunkten enden bei Preisen, "
+    return "warning", (f"Der Träger enthält {word}: Meist gibt es dann unendlich viele Zuteilungen, die dieselben Preise tragen. Zwei Läufe aus verschiedenen Startpunkten enden bei Preisen, "
                        f"die sich um {_sci(price_diff)} unterscheiden, aber bei Zuteilungen, die sich um bis zu {_num(alloc_diff)} je Eintrag unterscheiden.")
 
 
@@ -123,7 +123,7 @@ def verdict_search(wins: int, markets: int, median: float, q90: float, maximum: 
     """Suche nach Falschangaben in Zufallsmärkten: in wie vielen Märkten gewinnt Käufer 1, und wie viel."""
     if wins == 0:
         return "success", f"In keinem der {markets} Märkte gewinnt Käufer 1 durch eine der gesuchten Falschangaben."
-    return "warning", (f"In **{wins} von {markets}** Märkten findet Käufer 1 eine Falschangabe, die seinen wahren Nutzen erhöht; Gewinn im Median {_pct(100 * median)} %, 90-%-Quantil {_pct(100 * q90)} %, "
+    return "warning", (f"In **{wins} von {markets}** Märkten findet Käufer 1 in der Suche eine Falschangabe, die seinen wahren Nutzen erhöht (mindestens so viele Märkte); Gewinn im Median {_pct(100 * median)} %, 90-%-Quantil {_pct(100 * q90)} %, "
                        f"Maximum {_pct(100 * maximum)} % (über alle Märkte, auch die ohne Gewinn).")
 
 
